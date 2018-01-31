@@ -52,3 +52,8 @@ class FileMover():
         """Get files from remote server"""
         self.establish_connection()
         self.sftp.get(self.src+self.filename, self.dest+self.filename)
+
+    def put_files(self):
+        """Put files on remote server"""
+        self.establish_connection()
+        self.sftp.put(self.dest+self.filename, self.src+self.filename)
