@@ -3,6 +3,8 @@ import json
 import paramiko
 import os
 from stat import S_ISDIR
+import glob
+
 
 def store_file_data():
     """Function to store file data
@@ -49,14 +51,15 @@ def open_connection():
     connection = sftp
     return connection
 
-def transfer_files():
+def transfer_files(remote_dir, local_dir):
     establish_conn = open_connection()
     sftp_conn_data = load_file_data()
-    dir_items = establish_conn.listdir_attr()
+    dir_items = establish_conn.listdir()
 
     for item in dir_items:
-        remote_path = sftp_conn_data[4] + '/' + item.filename
-        local_path = os.path.join(sftp_conn_data[3], item.filename)
-        establish_conn.get(remote_path, local_path)
-
-transfer_files()
+        remote_dir =  sftp_conn_data[4] + '/' + item.filename
+        local_dir = os.path.join(sftp_conn_data[3], item.filename)
+        if S_ISDIR(item.st_mode):
+            transfer_files(remote_dir, local_dir)
+        else:
+            establish_conn.get(remote_dir, local_dir)
