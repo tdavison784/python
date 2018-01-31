@@ -12,4 +12,6 @@ my_file.load_file_data()
 ## Establishes connection
 my_file.establish_connection()
 ## Get files from remote path
-my_file.get_files()
+#my_file.get_files()
+## Put files from local machine to remote server
+#my_file.put_files()
