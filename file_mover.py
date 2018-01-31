@@ -1,38 +1,62 @@
 #!/usr/bin/python
 import json
 import paramiko
+import os
+from stat import S_ISDIR
 
-def store_file_details():
-	filename = "file.json"
-	with open(filename, 'r') as f_obj:
-		data = json.load(f_obj)
-	f_obj.close()
-	return data
-	
-	
-def load_file_details():
-	file_data = store_file_details()
-	
-	host = file_data['router']['host']
-	username = file_data['router']['user']
-	password = file_data['router']['password']
-	dest = file_data['router']['dest']
-	data = host, username, password, dest
-	
-	return data
+def store_file_data():
+    """Function to store file data
+    that gets loaded from a JSON file
+    """
+    filename = "file.json"
+    with open(filename, 'r') as f_obj:
+        data =  json.load(f_obj)
+    f_obj.close()
+    return data
+
+def load_file_data():
+    """Function to imports file data from
+    store_file_data function and stores the needed
+    key information
+    """
+    conn_data = store_file_data()
+
+    hostname = conn_data['router']['host']
+    username = conn_data['router']['username']
+    password = conn_data['router']['password']
+    src = conn_data['router']['src']
+    dest = conn_data['router']['dest']
+
+    data = hostname, username, password, src, dest
+    return data
 
 def open_connection():
-	"""Invokes paramiko to open an ssh connection
-	to the info that was provided in the JSON file
-	"""
-	data = load_file_details()
-	
-	port = 22
-    
-	ssh = paramiko.SSHClient()
-	ssh.set_missing_host_key_policy(
-		paramiko.AutoAddPolicy())
-	ssh.connect(data[0], username=data[1], password=data[2])
-	sftp = ssh.open_sftp()
+    """Function that loads all data from load_file_data module
+    and opens a SFTP connection to destination server that is
+    specified in the hostname variable.
+    """
+    sftp_conn_data = load_file_data()
 
-open_connection()
+    ## Port will always be 22
+    port = 22
+
+    ssh = paramiko.SSHClient()
+    ssh.set_missing_host_key_policy(
+        paramiko.AutoAddPolicy())
+    ssh.connect(sftp_conn_data[0], username=sftp_conn_data[1], password=sftp_conn_data[2])
+    sftp = ssh.open_sftp()
+
+    connection = sftp
+    return connection
+
+def transfer_files():
+    establish_conn = open_connection()
+    sftp_conn_data = load_file_data()
+    dir_items = establish_conn.listdir_attr()
+
+    for item in dir_items:
+        remote_path = sftp_conn_data[4] + '/' + item.filename
+        local_path = os.path.join(sftp_conn_data[3], item.filename)
+        establish_conn.get(remote_path, local_path)
+
+transfer_files()
